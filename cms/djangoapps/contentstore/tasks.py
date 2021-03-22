@@ -397,10 +397,11 @@ def import_olx(self, user_id, course_key_string, archive_path, archive_name, lan
     Import a course or library from a provided OLX .tar.gz archive.
     """
     current_step = 'Unpacking'
-    set_code_owner_attribute_from_module(__name__)
     courselike_key = CourseKey.from_string(course_key_string)
-    log_prefix = f'Course import {courselike_key}'
+    set_code_owner_attribute_from_module(__name__)
     set_custom_attributes_for_course_key(courselike_key)
+    log_prefix = f'Course import {courselike_key}'
+    self.status.set_state(current_step)
 
     # Locate the uploaded OLX archive (and download it from S3 if necessary)
     # Do everything in a try-except block to make sure everything is properly cleaned up.
@@ -475,7 +476,6 @@ def import_olx(self, user_id, course_key_string, archive_path, archive_name, lan
         import_func = import_course_from_xml
 
     try:
-        self.status.set_state(current_step)
         LOGGER.info(f'{log_prefix}: unpacking step started')
 
         temp_filepath = course_dir / get_valid_filename(archive_name)
@@ -539,9 +539,9 @@ def import_olx(self, user_id, course_key_string, archive_path, archive_name, lan
             tar_file.close()
 
         current_step = 'Verifying'
-        LOGGER.info(f'{log_prefix}: Uploaded file extracted. Verification step started')
         self.status.set_state(current_step)
         self.status.increment_completed_steps()
+        LOGGER.info(f'{log_prefix}: Uploaded file extracted. Verification step started')
 
         # find the 'course.xml' file
         def get_all_files(directory):
@@ -576,9 +576,9 @@ def import_olx(self, user_id, course_key_string, archive_path, archive_name, lan
         dirpath = os.path.relpath(dirpath, data_root)
 
         current_step = 'Updating'
-        LOGGER.info(f'{log_prefix}: Extracted file verified. Updating course started')
         self.status.set_state(current_step)
         self.status.increment_completed_steps()
+        LOGGER.info(f'{log_prefix}: Extracted file verified. Updating course started')
 
         courselike_items = import_func(
             modulestore(), user.id,
